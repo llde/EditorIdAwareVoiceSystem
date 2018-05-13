@@ -18,8 +18,12 @@ const char* strstr_caseinsensitive(const char* mainstring, const char* searchter
 bool stringCompareCaseInsesitive(const char* string1, const char* string2) {
 	if (string1 == nullptr || string2 == nullptr) return false;
 	for (size_t i = 0; string1[i] != '\0'; i++) {
-		if (string2[i] == '\0') return true;
-		if (tolower(string1[i] != tolower(string2[i])))  return false;
+		if (string2[i] == '\0') {
+			return true;
+		}
+		if (tolower(string1[i]) != tolower(string2[i])) {
+			return false;
+		}
 	}
 	return true;
 }

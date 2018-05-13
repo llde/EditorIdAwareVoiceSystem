@@ -32,13 +32,13 @@ bool replacePathComponent(Component path_component, const char* input, const cha
 	size_t component = 0;
 	size_t len = strlen(input);
 	const char* new_ptr = nullptr;
-	size_t size_until_component = 0;
+	size_t pos_start_comp = 0;
 	size_t remain = 0;
 	for (size_t i = 0; i < len; i++) {
 		if (input[i] == '\\') {
 			component++;
 			if (path_component == Component::Race && component == 4) {
-				size_until_component = i;
+				pos_start_comp = i;
 			}
 			if (path_component == Component::Race && component > 4) {
 				new_ptr = input + i;
@@ -49,10 +49,20 @@ bool replacePathComponent(Component path_component, const char* input, const cha
 	}
 	if (new_ptr == nullptr) return false;
 	memset(output,0, len);
- 	memcpy(output, input , size_until_component);
-	memcpy(output + size_until_component, repl, strlen(repl) -1);
-	_MESSAGE("%s" , output);
-	memcpy(output + size_until_component + strlen(repl),  new_ptr, remain);
-	_MESSAGE("%s", new_ptr);
+ 	memcpy(output, input , pos_start_comp +1);
+	memcpy(output + pos_start_comp +1, repl, strlen(repl));
+	memcpy(output + pos_start_comp + strlen(repl) +1 ,  new_ptr, remain);
 	return true;
+}
+
+
+
+
+void removeExtension(char* string1) {
+	for (size_t i = (strlen(string1) - 1); i >= 0; i--) {
+		if (string1[i] == '.') {
+			string1[i] = '\0';
+			break;
+		}
+	}
 }

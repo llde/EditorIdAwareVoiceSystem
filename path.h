@@ -22,3 +22,6 @@ char* getSingleComponent(Component path_component, const char* input);
 @param output: the sustituted path. The caller is responsible to make sure there is enough space
 */
 bool replacePathComponent(Component path_component, const char* input, const char* repl, char* output);
+
+
+void removeExtension(char* string1);

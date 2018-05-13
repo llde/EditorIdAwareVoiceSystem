@@ -3,3 +3,5 @@ const char* strstr_caseinsensitive(const char* mainstring, const char* searchter
 
 
 bool stringCompareCaseInsesitive(const char* string1 , const char* string2);
+
+

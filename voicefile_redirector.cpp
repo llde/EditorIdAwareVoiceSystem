@@ -3,42 +3,21 @@
 #include "obse/CommandTable.h"
 #include "obse_common/SafeWrite.h"
 #include "obse/GameData.h"
-//#include "shlwapi.h" -- previously needed for PathFileExists()
-
-#if OBLIVION
-#include "obse/GameAPI.h"
-
-/*	
-As of 0020, ExtractArgsEx() and ExtractFormatStringArgs() are no longer directly included in plugin builds.
-They are available instead through the OBSEScriptInterface.
-To make it easier to update plugins to account for this, the following can be used.
-It requires that g_scriptInterface is assigned correctly when the plugin is first loaded.
-*/
-#define ENABLE_EXTRACT_ARGS_MACROS 1	// #define this as 0 if you prefer not to use this
-
-#if ENABLE_EXTRACT_ARGS_MACROS
-
-OBSEScriptInterface * g_scriptInterface = NULL;	// make sure you assign to this
-#define ExtractArgsEx(...) g_scriptInterface->ExtractArgsEx(__VA_ARGS__)
-#define ExtractFormatStringArgs(...) g_scriptInterface->ExtractFormatStringArgs(__VA_ARGS__)
-
-#endif
-
-#else
-#include "obse_editor/EditorAPI.h"
-#endif
-
 #include "obse/ParamInfos.h"
 #include "obse/Script.h"
 #include "obse/GameObjects.h"
+
 #include <string>
+#include <vector>
+
+#include "utils.h"
+#include "path.h"
 
 PluginHandle				g_pluginHandle = kPluginHandle_Invalid;
 OBSESerializationInterface	* g_serialization = NULL;
 OBSEArrayVarInterface		* g_arrayIntfc = NULL;
 OBSEScriptInterface			* g_scriptIntfc = NULL;
 OBSEMessagingInterface*		g_msg;
-// (already in GameData.h/.cpp) FileFinder** g_FileFinder = (FileFinder**)0xB33A04;
 
 IDebugLog		gLog("voicefile_redirector.log");
 
@@ -73,304 +52,7 @@ static char *pLipFile;
 static char TmpLip[MAX_VOICENAME];
 static char *pTmpLip;
 
-const char* strstr_caseinsensitive(const char* mainstring, const char* searchterm)
-{
-	int i, j, k;
 
-	for (i = 0; mainstring[i]; i++)
-	{
-		for (j = i, k = 0; tolower(mainstring[j]) == tolower(searchterm[k]); j++, k++)
-		{
-			if (searchterm[k + 1] == NULL)
-				return (mainstring + i);
-		}
-	}
-	return NULL;
-}
-
-// try to detect if this is a greeting
-bool IsGreeting(const char *voicefilename)
-{
-	const char *resultstr;
-
-	resultstr = strstr_caseinsensitive(voicefilename, "_greeting_");
-	if (resultstr != nullptr)
-	{
-		resultstr = strstr_caseinsensitive(voicefilename, "_1.mp3");
-		if (resultstr != nullptr)
-			return true;
-		else
-			return false;
-	}
-	else
-		return false;
-}
-
-// fallback to generic greeting from Oblivion
-void ReplaceGreeting(char *voicefilename)
-{
-	const char *resultstr;
-
-
-	// find race\sex, use hello from that race\sex
-	resultstr = strstr_caseinsensitive(voicefilename, "argonian\\f");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\argonian\\f\\GenericKhajiit_HELLO_00062CCB_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "argonian\\m");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Oblivion.esm\\argonian\\m\\GenericKhajiit_HELLO_00062CCB_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "breton\\m");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\breton\\m\\GenericBreton_HELLO_00062CC7_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "high elf\\f");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\high elf\\f\\GenericHighElf_HELLO_00062CAA_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "high elf\\m");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\high elf\\m\\GenericHighElf_HELLO_00062CAA_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "nord\\f");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\nord\\f\\GenericNord_HELLO_00062CB3_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "nord\\m");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\nord\\m\\GenericNord_HELLO_00062CB3_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "redguard\\f");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\redguard\\f\\GenericRedguard_HELLO_00062CC1_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "redguard\\m");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\redguard\\m\\GenericRedguard_HELLO_00062CC1_1.mp3");
-		return;
-	}
-
-	//////////////////////
-	// EXPERIMENTAL: Catch racial voice sets from Diverse Voices mod
-	resultstr = strstr_caseinsensitive(voicefilename, "wood elf\\f");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\high elf\\f\\GenericHighElf_HELLO_00062CAA_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "wood elf\\m");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\high elf\\m\\GenericHighElf_HELLO_00062CAA_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "dark elf\\f");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\high elf\\f\\GenericHighElf_HELLO_00062CAA_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "dark elf\\m");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\high elf\\m\\GenericHighElf_HELLO_00062CAA_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "orc\\f");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\nord\\f\\GenericNord_HELLO_00062CB3_1.mp3");
-		return;
-	}
-	resultstr = strstr_caseinsensitive(voicefilename, "orc\\m");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\nord\\m\\GenericNord_HELLO_00062CB3_1.mp3");
-		return;
-	}
-	//////////////////////
-
-	// if no matches found, then just use imperial\m or \f
-	resultstr = strstr_caseinsensitive(voicefilename, "\\f\\");
-	if (resultstr != nullptr)
-	{
-		strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\imperial\\f\\GenericImperial_HELLO_000919A9_1.mp3");
-		return;
-	}
-	// default to m for everything else
-	strcpy(voicefilename, "Data\\Sound\\Voice\\Oblivion.esm\\imperial\\m\\GenericImperial_HELLO_000919A9_1.mp3");
-	return;
-
-}
-
-
-//////////////////////
-// EXPERIMENTAL:
-// In the voicefilename string: replace origstring with swapstring
-// Then check if modified filename exists
-bool Fallback_SwapRace(char *voicefilename, const char *origstring, const char *swapstring)
-{
-	char tempstring[MAX_VOICENAME];
-	const char *resultstr;
-	char *startoffset;
-	char *stopoffset;
-	int swapstr_len;
-	int origstr_len;
-
-	// search for origstring and replace with swapstring
-	// NOTE: origstrings must start and end with "\\"
-	resultstr = strstr_caseinsensitive(voicefilename, origstring);
-	if (resultstr != nullptr)
-	{
-		origstr_len = strlen(origstring);
-		// save start and stop offsets
-		startoffset = (char*)(resultstr + 1);
-		stopoffset = (char*)(startoffset + origstr_len - 2);
-	}
-	else
-	{
-//		_MESSAGE("voicefile_redirector: Race Fallback (DEBUG): origstring=[%s] not found in '%s'.", origstring, &voicefilename[5]);
-		return false;
-	}
-
-	// shift stopoffset to accommadate racestring
-	swapstr_len = strlen(swapstring);
-	// place the bottom half of the pathname into a new string so that there is no memory corruption when shifting
-	strcpy(tempstring, stopoffset);
-	strcpy(startoffset + swapstr_len, tempstring);
-	strncpy(startoffset, swapstring, swapstr_len);
-
-	_MESSAGE("voicefile_redirector: Race Fallback: looking for fallback file: '%s'", &voicefilename[5]);
-	if ((*g_FileFinder)->FindFile(&voicefilename[5], 0, 0, -1) == 0)
-	{
-		return false;
-	}
-
-	return true;
-
-}
-//////////////////////
-
-
-// try to fallback to imperial voice set if available
-// return true if imperial voice set available
-bool FallbackToRace(char *voicefilename, const char *racestring)
-{
-	char tempstring[MAX_VOICENAME];
-	const char *resultstr;
-	char *startoffset;
-	char *stopoffset;
-	int racestr_len;
-
-	// search for argonian and replace with racestring
-	resultstr = strstr_caseinsensitive(voicefilename, "\\argonian\\");
-	if (resultstr != nullptr)
-	{
-		// save start and stop offsets
-		startoffset = (char*)(resultstr + 1);
-		stopoffset = (char*)(startoffset + 8);
-	}
-	else
-	{
-		resultstr = strstr_caseinsensitive(voicefilename, "\\breton\\");
-		if (resultstr != nullptr)
-		{
-			// save start and stop offsets
-			startoffset = (char*)(resultstr + 1);
-			stopoffset = (char*)(startoffset + 6);
-		}
-		else
-		{
-			resultstr = strstr_caseinsensitive(voicefilename, "\\high elf\\");
-			if (resultstr != nullptr)
-			{
-				// save start and stop offsets
-				startoffset = (char*)(resultstr + 1);
-				stopoffset = (char*)(startoffset + 8);
-			}
-			else
-			{
-				resultstr = strstr_caseinsensitive(voicefilename, "\\nord\\");
-				if (resultstr != nullptr)
-				{
-					// save start and stop offsets
-					startoffset = (char*)(resultstr + 1);
-					stopoffset = (char*)(startoffset + 4);
-				}
-				else
-				{
-					resultstr = strstr_caseinsensitive(voicefilename, "\\redguard\\");
-					if (resultstr != nullptr)
-					{
-						// save start and stop offsets
-						startoffset = (char*)(resultstr + 1);
-						stopoffset = (char*)(startoffset + 8);
-					}
-					else
-					{
-						return false;
-					}
-				}
-			}
-		}
-	}
-	// shift stopoffset to accommadate racestring
-	racestr_len = strlen(racestring);
-	// place the bottom half of the pathname into a new string so that there is no memory corruption when shifting
-	strcpy(tempstring, stopoffset);
-	strcpy(startoffset + racestr_len, tempstring);
-	strncpy(startoffset, racestring, racestr_len);
-	
-//	_MESSAGE("voicefile_redirector: Race Fallback: looking for fallback file: '%s'", &voicefilename[5]);
-	if ((*g_FileFinder)->FindFile(&voicefilename[5], 0, 0, -1) == 0)
-	{
-		return false;
-	}
-
-	return true;
-
-}
-
-//////////////////////
-// EXPERIMENTAL: check for specific race then try to fallback to alternative race
-// TODO: replace hardcoded strings with actual table
-bool FallbackToRaceTable(char *voicefilename)
-{
-	const char *resultstr;
-
-	if (Fallback_SwapRace(voicefilename, "\\dark elf\\", "high elf") == false)
-	{
-		if (Fallback_SwapRace(voicefilename, "\\wood elf\\", "high elf") == false)
-		{
-			if (Fallback_SwapRace(voicefilename, "\\orc\\", "nord") == false)
-			{
-				return FallbackToRace(voicefilename, "imperial");
-			}
-		}
-	}
-
-	return true;
-
-}
-//////////////////////
 
 
 static __declspec(naked) void SilentVoiceHook(void)
@@ -462,57 +144,28 @@ static int CheckFile(void)
 
 static void CheckLipFile(void)
 {
-	int stringlength;
-
-//	_MESSAGE("voicefile_redirector: raw Lip file = '%s'", pLipFile);
 	strncpy(TmpLip, pLipFile, strlen(pLipFile) - 3);
-	strcpy(TmpLip+strlen(pLipFile)-3, "lip");
-	pTmpLip = &TmpLip[5];
-//	_MESSAGE("voicefile_redirector: now searching for pTmpLip = '%s'", pTmpLip);
-	//	if (CheckFile() == 0)
-	if ((*g_FileFinder)->FindFile(pTmpLip, 0, 0, -1) == 0)
-	{
-//		_MESSAGE("voicefile_redirector: LipFile '%s' not found, proceeding with fallback cascade", pTmpLip);
-		// file not found, proceed with fallback cascade:
+	strcpy(TmpLip+strlen(pLipFile) -3, "lip");
+	if ((*g_FileFinder)->FindFile(TmpLip, 0, 0, -1) != 0) return;
+	memset(TmpLip, 0, strlen(pLipFile));
+	_MESSAGE("voicefile_redirector: raw Lip file = '%s'", pLipFile);
+	char* race = getSingleComponent(Component::Race, pLipFile);
+	_MESSAGE("Race found: '%s'", race);
+	if (stringCompareCaseInsesitive("High Elf", race) == true) {
+		replacePathComponent(Component::Race, pLipFile, "elfo supremo", TmpLip);
+	}
+	else {
+		// no other fallbacks found, replace with silent voice mp3
+		memset(pLipFile, 0, strlen(pLipFile));
+		strcpy(pLipFile, SilentVoiceLip);
+	}
+    // BugFix for lip files: for some reason, doing strcpy is not working, so reverting back to old method of
+    // redirecting to DLL's internal global variable for lipfilename.
+//	_MESSAGE("voicefile_redirector: Lips Hook: replacing '%s' with '%s'", pLipFile, TmpLip);
+//	pLipFile = &TmpLip[0];
+// strcpy(pLipFile, TmpLip);
+	_MESSAGE("voicefile_redirector: Lips Hook: replaced to  '%s'", pLipFile);
 
-		// check if it can fallback to imperial race
-		strcpy(TmpLip, pLipFile);
-	//	_MESSAGE("voicefile_redirector: testing '%s' with race fallback", TmpLip);
-		//////////////////////
-		// EXPERIMENTAL: 
-		if (FallbackToRaceTable(TmpLip) == true)
-		{
-			TmpLip[strlen(TmpLip) - 4] = '\0';
-		}
-		// Check if it is a greeting
-		else if (IsGreeting(pLipFile) == true)
-		{
-			strcpy(TmpLip, pLipFile);
-			ReplaceGreeting(TmpLip);
-			TmpLip[strlen(TmpLip)-4] = '\0';
-		}
-		else
-		{
-			// no more fallbacks found, use silent voice
-			strcpy(TmpLip, SilentVoiceLip);
-		}
-		// add 1 character to stringlength comparison to account for null character
-		stringlength = strlen(TmpLip);
-		if (stringlength + 1 > MAX_VOICENAME)
-		{
-			_MESSAGE("voicefile_redirector: ERROR, filename '%s' is too long. Aborting replacement operation.", TmpLip);
-			return;
-		}
-		// BugFix for lip files: for some reason, doing strcpy is not working, so reverting back to old method of
-		// redirecting to DLL's internal global variable for lipfilename.
-		_MESSAGE("voicefile_redirector: Lips Hook: replacing '%s' with '%s'", pLipFile, TmpLip);
-		pLipFile = &TmpLip[0];
-//		strcpy(pLipFile, TmpLip);
-	}
-	else
-	{
-//		_MESSAGE("voicefile_redirector: .LIP file FOUND, using original file '%s'", pLipFile);
-	}
 }
 
 static __declspec(naked) void LipsHook(void)
@@ -537,105 +190,23 @@ static __declspec(naked) void LipsHook(void)
 
 static void OverWriteSoundFile(void)
 {
-	int stringlength;
-
 	// voice file not found, proceed with fallback mechanism
-//	_MESSAGE("voicefile_redirector: Silent Voice Hook activated on '%s'", pSoundFile);
-
-	// check if fallback to imperial race is available
-	strcpy(NewSoundFile, pSoundFile);
-	//////////////////////
-	// EXPERIMENTAL: 
-	if (FallbackToRaceTable(NewSoundFile) == true)
-	{
-		// nothing to do, ready for transfer
+	_MESSAGE("voicefile_redirector: Silent Voice Hook activated on '%s'", pSoundFile);
+	char* race = getSingleComponent(Component::Race, pSoundFile);
+	_MESSAGE("Race found: '%s'", race);
+	if (stringCompareCaseInsesitive("High Elf", race) == true) {
+		replacePathComponent(Component::Race, pSoundFile, "elfo supremo", NewSoundFile);
 	}
-	// check if it is a greeting
-	else if (IsGreeting(pSoundFile) == true)
-	{
-		strcpy(NewSoundFile, pSoundFile);
-		ReplaceGreeting(NewSoundFile);
-	}
-	else
-	{
+	else {
 		// no other fallbacks found, replace with silent voice mp3
 		strcpy(NewSoundFile, SilentVoiceMp3);
 	}
-	stringlength = strlen(NewSoundFile);
-	if (stringlength + 1 > MAX_VOICENAME)
-	{
-		_MESSAGE("voicefile_redirector: ERROR: SilentVoiceHook: filename '%s' is too long. Aborting replacement operation.", NewSoundFile);
-		return;
-	}
-	_MESSAGE("voicefile_redirector: Silent Voice Hook: replacing '%s' with '%s'", pSoundFile, NewSoundFile);
+	_MESSAGE("voicefile_redirector: Silent Voice Hook:  '%s' with '%s'", pSoundFile, NewSoundFile);
 	strcpy(pSoundFile, NewSoundFile);
 	DialogSubtitle = 1;
 	GeneralSubtitle = 1;
 }
 
-/*
-#if OBLIVION
-bool Cmd_TestUSV_Execute(COMMAND_ARGS)
-{
-	_MESSAGE("voicefile_redirector");
-
-	*result = 42;
-
-	_MESSAGE("voicefile_redirector: executing test console command.");
-	Console_Print("voicefile_redirector console command executed");
-
-	return true;
-}
-#endif
-
-static CommandInfo kPluginTestCommand =
-{
-	"testusv",
-	"",
-	0,
-	"test command for obse plugin",
-	0,		// requires parent obj
-	0,		// doesn't have params
-	NULL,	// no param table
-
-	HANDLER(Cmd_TestUSV_Execute)
-};
-*/
-
-void MessageHandler(OBSEMessagingInterface::Message* msg)
-{
-	switch (msg->type)
-	{
-	case OBSEMessagingInterface::kMessage_ExitGame:
-		_MESSAGE("voicefile_redirector: received ExitGame message");
-		break;
-	case OBSEMessagingInterface::kMessage_ExitToMainMenu:
-//		_MESSAGE("voicefile_redirector: received ExitToMainMenu message");
-		break;
-	case OBSEMessagingInterface::kMessage_PostLoad:
-//		_MESSAGE("voicefile_redirector: received PostLoad mesage");
-		break;
-	case OBSEMessagingInterface::kMessage_LoadGame:
-	case OBSEMessagingInterface::kMessage_SaveGame:
-//		_MESSAGE("voicefile_redirector: received save/load message with file path %s", msg->data);
-		break;
-	case OBSEMessagingInterface::kMessage_Precompile:
-	{
-//		ScriptBuffer* buffer = (ScriptBuffer*)msg->data;
-//		_MESSAGE("voicefile_redirector: received precompile message. Script Text:\n%s", buffer->scriptText);
-		break;
-	}
-	case OBSEMessagingInterface::kMessage_PreLoadGame:
-//		_MESSAGE("voicefile_redirector: received pre-loadgame message with file path %s", msg->data);
-		break;
-	case OBSEMessagingInterface::kMessage_ExitGame_Console:
-//		_MESSAGE("voicefile_redirector: received quit game from console message");
-		break;
-	default:
-		_MESSAGE("voicefile_redirector: received unknown message");
-		break;
-	}
-}
 
 extern "C" {
 
@@ -721,40 +292,6 @@ extern "C" {
 		// Lips Hook
 		WriteRelJump(LipsHookPatchAddr, (UInt32)&LipsHook);
 		_MESSAGE("voicefile_redirector: memory address for LipsHook patched.");
-
-		// register commands
-//		obse->SetOpcodeBase(0x2000);
-//		obse->RegisterCommand(&kPluginTestCommand);
-
-		// set up serialization callbacks when running in the runtime
-		if (!obse->isEditor)
-		{
-			// register to use string var interface
-			// this allows plugin commands to support '%z' format specifier in format string arguments
-			OBSEStringVarInterface* g_Str = (OBSEStringVarInterface*)obse->QueryInterface(kInterface_StringVar);
-			g_Str->Register(g_Str);
-
-			// get an OBSEScriptInterface to use for argument extraction
-			g_scriptInterface = (OBSEScriptInterface*)obse->QueryInterface(kInterface_Script);
-		}
-
-		// register to receive messages from OBSE
-		OBSEMessagingInterface* msgIntfc = (OBSEMessagingInterface*)obse->QueryInterface(kInterface_Messaging);
-		msgIntfc->RegisterListener(g_pluginHandle, "OBSE", MessageHandler);
-		g_msg = msgIntfc;
-
-		// get command table, if needed
-		OBSECommandTableInterface* cmdIntfc = (OBSECommandTableInterface*)obse->QueryInterface(kInterface_CommandTable);
-		if (cmdIntfc) {
-#if 0	// enable the following for loads of log output
-			for (const CommandInfo* cur = cmdIntfc->Start(); cur != cmdIntfc->End(); ++cur) {
-				_MESSAGE("%s", cur->longName);
-			}
-#endif
-		}
-		else {
-			_MESSAGE("Couldn't read command table");
-		}
 
 		return true;
 	}

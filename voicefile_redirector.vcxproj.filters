@@ -51,6 +51,8 @@
       <Filter>obse</Filter>
     </ClCompile>
     <ClCompile Include="voicefile_redirector.cpp" />
+    <ClCompile Include="utils.cpp" />
+    <ClCompile Include="path.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\obse\obse\GameActorValues.h">
@@ -107,6 +109,9 @@
     <ClInclude Include="..\obse\obse_common\SafeWrite.h">
       <Filter>obse</Filter>
     </ClInclude>
+    <ClInclude Include="utils.h" />
+    <ClInclude Include="constants.h" />
+    <ClInclude Include="path.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\obse\obse\GameRTTI_1_1.inl">

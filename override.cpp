@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "finder.h"
 #include "override.h"
+#include "path.h"
 
 #include <unordered_map>
 #include <string>
@@ -44,14 +45,15 @@ void InitializeOverrides(const char* overrideFile){
 }
 
 //Will need to test for overhead.
-const char* getOverrideFor(char* RaceToOverride){
+const char* getOverrideFor(char* RaceToOverride, const char* input, char* output){
 	if (RaceToOverride == nullptr) return nullptr;
 	stringToLower(RaceToOverride);
 	auto& vec_ref = raceOverrides.find(RaceToOverride);
 	if (vec_ref == raceOverrides.end()) return nullptr;
 	auto& val = vec_ref->second;
 	for each (std::string over in val){
-		if (FileExists(over.c_str())) return over.c_str();
+		replacePathComponent(Component::Race, input, over.c_str(), output);
+		if (FileExists(output)) return output;
 	}
 	return nullptr;
 }

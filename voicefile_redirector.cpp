@@ -147,31 +147,28 @@ static int CheckFile(void)
 static void CheckLipFile(void)
 {
 	removeExtension(pLipFile);
-	appendToPath(pLipFile, "lip");
+	appendToPath(pLipFile, ".lip");
 	if (FileExists(pLipFile) == true) return;
 	memset(TmpLip, 0, MAX_VOICENAME);
 	_MESSAGE("voicefile_redirector: raw Lip file = '%s'", pLipFile);
 	char* race = getSingleComponent(Component::Race, pLipFile);
-	const char* new_race = getOverrideFor(race);
+	const char* new_race = getOverrideFor(race, pLipFile, TmpLip);
 	delete[] race;
+	memset(pLipFile, 0, MAX_VOICENAME);
 	if (new_race == nullptr) {
 		// no fallbacks found, replace with silent voice mp3
-		memset(pLipFile, 0, MAX_VOICENAME);
 		strcpy(pLipFile, SilentVoiceLip);
 	}
 	else{
-		replacePathComponent(Component::Race, pLipFile, new_race, TmpLip);
 		removeExtension(TmpLip);
-		memset(pLipFile, 0, MAX_VOICENAME);
 //		strcpy(pLipFile, TmpLip);
 		pLipFile = &TmpLip[0];
-
 	}
     // BugFix for lip files: for some reason, doing strcpy is not working, so reverting back to old method of
     // redirecting to DLL's internal global variable for lipfilename.
 //	_MESSAGE("voicefile_redirector: Lips Hook: replacing '%s' with '%s'", pLipFile, TmpLip);
 // strcpy(pLipFile, TmpLip);
-	_MESSAGE("voicefile_redirector: Lips Hook: replaced to  '%s'", pLipFile);
+	_MESSAGE("voicefile_redirector: Lips Hook: replaced to  '%s.lip'", pLipFile);
 
 }
 
@@ -201,16 +198,14 @@ static void OverWriteSoundFile(void)
 	// voice file not found, proceed with fallback mechanism
 	_MESSAGE("voicefile_redirector: Silent Voice Hook activated on '%s'", pSoundFile);
 	char* race = getSingleComponent(Component::Race, pSoundFile);
-	const char* new_race = getOverrideFor(race);
+	const char* new_race = getOverrideFor(race, pSoundFile, NewSoundFile);
 	delete[] race;
+	memset(pSoundFile, 0, MAX_VOICENAME);
 	if (new_race != nullptr) {
-		replacePathComponent(Component::Race, pSoundFile, new_race , NewSoundFile);
-		memset(pSoundFile, 0, MAX_VOICENAME);
 		strcpy(pSoundFile, NewSoundFile);
 	}
 	else {
 		// no other fallbacks found, replace with silent voice mp3
-		memset(pSoundFile, 0, MAX_VOICENAME);
 		strcpy(pSoundFile, SilentVoiceMp3);
 	}
 	_MESSAGE("voicefile_redirector: Silent Voice Hook:  Replaced to '%s'",  pSoundFile);

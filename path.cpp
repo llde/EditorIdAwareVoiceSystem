@@ -15,7 +15,7 @@ char* getSingleComponent(Component path_component, const char* input) {
 		}
 		if (path_component == Component::Race && component > 4) break;
 		if (path_component == Component::Race && component == 4) {
-			if (new_ptr == NULL) new_ptr = input + i;
+			if (new_ptr == nullptr) new_ptr = input + i;
 			comp_len++;
 		}
 	}
@@ -56,7 +56,9 @@ bool replacePathComponent(Component path_component, const char* input, const cha
 }
 
 
-
+void appendToPath(char* string, const char* app) {
+	strcat(string, app);
+}
 
 void removeExtension(char* string1) {
 	for (size_t i = (strlen(string1) - 1); i >= 0; i--) {

@@ -12,11 +12,13 @@
 
 #include "utils.h"
 #include "path.h"
+#include "override.h"
+#include "finder.h"
 
 PluginHandle				g_pluginHandle = kPluginHandle_Invalid;
-OBSESerializationInterface	* g_serialization = NULL;
-OBSEArrayVarInterface		* g_arrayIntfc = NULL;
-OBSEScriptInterface			* g_scriptIntfc = NULL;
+OBSESerializationInterface* g_serialization = NULL;
+OBSEArrayVarInterface*      g_arrayIntfc = NULL;
+OBSEScriptInterface	*       g_scriptIntfc = NULL;
 OBSEMessagingInterface*		g_msg;
 
 IDebugLog		gLog("voicefile_redirector.log");
@@ -39,8 +41,11 @@ static const UInt32 LipsHookRetnAddr = 0x00494125;
 
 static void OverWriteSoundFile(void);
 static char *pSoundFile;
-static char *SilentVoiceMp3 = "Data\\OBSE\\Plugins\\elys_usv.mp3";
-static char *SilentVoiceLip = "Data\\OBSE\\Plugins\\Elys_USV";
+
+static char* ConfigurationFile = "Data\\OBSE\\Plugins\\voice_redirector.ini";
+static char* OverrideFile = "Data\\OBSE\\Plugins\\voice_redirector.over";
+static char* SilentVoiceMp3 = "Data\\OBSE\\Plugins\\elys_usv.mp3";
+static char* SilentVoiceLip = "Data\\OBSE\\Plugins\\Elys_USV";
 static char NewSoundFile[MAX_VOICENAME];
 std::string g_NewVoiceFilename;
 //static char *SoundFile = "Data\\sound\\voice\\morrowind_ob.esm\\breton\\m\\fbmwchargen_greeting_00000f48_1.mp3";
@@ -51,9 +56,6 @@ static byte GeneralSubtitle;
 static char *pLipFile;
 static char TmpLip[MAX_VOICENAME];
 static char *pTmpLip;
-
-
-
 
 static __declspec(naked) void SilentVoiceHook(void)
 {
@@ -144,27 +146,27 @@ static int CheckFile(void)
 
 static void CheckLipFile(void)
 {
+	removeExtension(pLipFile);
+	appendToPath(pLipFile, "lip");
+	if (FileExists(pLipFile) == true) return;
 	memset(TmpLip, 0, MAX_VOICENAME);
-	strncpy(TmpLip, pLipFile, strlen(pLipFile) - 3);
-	strcpy(TmpLip+strlen(pLipFile) -3, "lip");
-	if ((*g_FileFinder)->FindFile(TmpLip, 0, 0, -1) != 0) return;
-	memset(TmpLip, 0, strlen(pLipFile));
 	_MESSAGE("voicefile_redirector: raw Lip file = '%s'", pLipFile);
 	char* race = getSingleComponent(Component::Race, pLipFile);
-	if (stringCompareCaseInsesitive("High Elf", race) == true) {
-		replacePathComponent(Component::Race, pLipFile, "elfo supremo", TmpLip);
+	const char* new_race = getOverrideFor(race);
+	delete[] race;
+	if (new_race == nullptr) {
+		// no fallbacks found, replace with silent voice mp3
+		memset(pLipFile, 0, MAX_VOICENAME);
+		strcpy(pLipFile, SilentVoiceLip);
+	}
+	else{
+		replacePathComponent(Component::Race, pLipFile, new_race, TmpLip);
 		removeExtension(TmpLip);
 		memset(pLipFile, 0, MAX_VOICENAME);
 //		strcpy(pLipFile, TmpLip);
 		pLipFile = &TmpLip[0];
 
 	}
-	else {
-		// no other fallbacks found, replace with silent voice mp3
-		memset(pLipFile, 0, MAX_VOICENAME);
-		strcpy(pLipFile, SilentVoiceLip);
-	}
-	delete[] race;
     // BugFix for lip files: for some reason, doing strcpy is not working, so reverting back to old method of
     // redirecting to DLL's internal global variable for lipfilename.
 //	_MESSAGE("voicefile_redirector: Lips Hook: replacing '%s' with '%s'", pLipFile, TmpLip);
@@ -199,16 +201,19 @@ static void OverWriteSoundFile(void)
 	// voice file not found, proceed with fallback mechanism
 	_MESSAGE("voicefile_redirector: Silent Voice Hook activated on '%s'", pSoundFile);
 	char* race = getSingleComponent(Component::Race, pSoundFile);
-	if (stringCompareCaseInsesitive("High Elf", race) == true) {
-		replacePathComponent(Component::Race, pSoundFile, "elfo supremo", NewSoundFile);
+	const char* new_race = getOverrideFor(race);
+	delete[] race;
+	if (new_race != nullptr) {
+		replacePathComponent(Component::Race, pSoundFile, new_race , NewSoundFile);
+		memset(pSoundFile, 0, MAX_VOICENAME);
+		strcpy(pSoundFile, NewSoundFile);
 	}
 	else {
 		// no other fallbacks found, replace with silent voice mp3
-		strcpy(NewSoundFile, SilentVoiceMp3);
+		memset(pSoundFile, 0, MAX_VOICENAME);
+		strcpy(pSoundFile, SilentVoiceMp3);
 	}
-	delete[] race;
-	_MESSAGE("voicefile_redirector: Silent Voice Hook:  '%s' with '%s'", pSoundFile, NewSoundFile);
-	strcpy(pSoundFile, NewSoundFile);
+	_MESSAGE("voicefile_redirector: Silent Voice Hook:  Replaced to '%s'",  pSoundFile);
 	DialogSubtitle = 1;
 	GeneralSubtitle = 1;
 }
@@ -298,7 +303,7 @@ extern "C" {
 		// Lips Hook
 		WriteRelJump(LipsHookPatchAddr, (UInt32)&LipsHook);
 		_MESSAGE("voicefile_redirector: memory address for LipsHook patched.");
-
+		InitializeOverrides(nullptr); //TODO real configuration file
 		return true;
 	}
 

@@ -27,3 +27,11 @@ bool stringCompareCaseInsesitive(const char* string1, const char* string2) {
 	}
 	return true;
 }
+
+
+void stringToLower(char* string) {
+	if (string == nullptr) return;
+	for (size_t i = 0; i < strlen(string); i++) {
+		string[i] = tolower(string[i]);
+	}
+}

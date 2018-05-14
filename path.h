@@ -24,4 +24,6 @@ char* getSingleComponent(Component path_component, const char* input);
 bool replacePathComponent(Component path_component, const char* input, const char* repl, char* output);
 
 
+void appendToPath(char* string, const char* app);
+
 void removeExtension(char* string1);

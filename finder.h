@@ -1,0 +1,1 @@
+bool FileExists(const char* file);

@@ -30,6 +30,8 @@ std::map<UInt32, const char*>	FormIDReferenceMap;
 void __stdcall SetEditorID(TESForm* form, const char* EditorID){
 	char* edid = (char*) FormHeap_Allocate(strlen(EditorID) + 1);
 	strcpy(edid, EditorID);
+//	UInt32* boh = NULL;
+//	*boh=form->refID;
 	const char* old_edid =  FormIDReferenceMap[form->refID]; 
 	FormIDReferenceMap[form->refID] = edid;
 	if(old_edid) FormHeap_Free((void*)old_edid);
@@ -61,6 +63,17 @@ void __stdcall TESForm_GetEditorID()
 	}
 }
 
+void (__cdecl* TESFullName_Load)(TESFullName*, UInt32*) = (void (__cdecl*)(TESFullName*, UInt32*))kTESFullNameLoad;
+
+void __cdecl TESFullNameHook(TESFullName* name, UInt32* unk01){
+	TESForm* currentForm;
+	__asm {
+		mov currentForm, ebx
+	}
+	TESFullName_Load(name, unk01);
+	_MESSAGE("%s %s", name->name.m_data, currentForm->GetEditorName());
+}
+
 void ApplyEdidHooks(const OBSEInterface* obse){
 	if(obse->GetPluginLoaded("REID")){
 		_MESSAGE("Detected REID. Apply Messaging interop");
@@ -81,6 +94,7 @@ void ApplyEdidHooks(const OBSEInterface* obse){
 		SafeWrite32(PatchAddressGet, (UInt32)TESForm_GetEditorID);
 		SafeWrite32(PatchAddress,    (UInt32)TESForm_SetEditorID);
 	}
+	WriteRelCall(kTESRaceFullNameLoad1, (UInt32)&TESFullNameHook);
 }
 
 

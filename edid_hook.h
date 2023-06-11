@@ -10,6 +10,11 @@ struct REIDInteropData
 	bool						HasEditorID;
 	char						EditorIDBuffer[kBufferSize];
 };
+const UInt32 kTESRaceFullNameLoad1 = 0x0052D8E4;
+const UInt32 kTESRaceFullNameLoad2 = 0x0052D8F5;
+
+
+const UInt32 kTESFullNameLoad = 0x0046C7A0;
 
 const UInt32 kTESForm_SetEditorID_VTBLOffset = 0xD8;
 const UInt32 kTESForm_GetEditorID_VTBLOffset = 0xD4;

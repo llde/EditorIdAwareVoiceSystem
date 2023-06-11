@@ -7,11 +7,13 @@
 #include <string>
 #include <vector>
 
+static std::unordered_map<std::string, std::vector<std::string>>  otheroverrides;
+
 static std::unordered_map<std::string, std::vector<std::string>>  raceOverrides;
 
 //For now overrideFile is ignored
-void InitializeOverrides(const char* overrideFile){
-	if (overrideFile == nullptr) _WARNING("Override file still not implemented!");
+//TODO autogenerate this list from loaded Mods don't h ardcode
+void InitializeOverrides(){
 	std::vector<std::string> raceOver;
 	raceOver.push_back("high elf");
 	raceOver.push_back("highelf"); //The race editor id.
@@ -44,6 +46,12 @@ void InitializeOverrides(const char* overrideFile){
 //Why they thinked this was a good idea still eludes me.
 }
 
+
+void InitializeConfigurationOverrides(const char* overrideFile){
+	
+}
+
+
 //Will need to test for overhead.
 const char* getOverrideFor(char* RaceToOverride, const char* input, char* output){
 	if (RaceToOverride == nullptr) return nullptr;
@@ -57,4 +65,10 @@ const char* getOverrideFor(char* RaceToOverride, const char* input, char* output
 	}
 	return nullptr;
 }
-	
+
+const char* getMappingEditor(char* file){
+	char* race = getSingleComponent(Component::Race, file);
+	stringToLower(race);
+	if(!strcmp(race, "high elf")) return "elfo supremo";
+	return race;
+}

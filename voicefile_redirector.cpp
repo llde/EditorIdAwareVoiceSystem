@@ -14,6 +14,7 @@
 #include "path.h"
 #include "override.h"
 #include "finder.h"
+#include "edid_hook.h"
 
 PluginHandle				g_pluginHandle = kPluginHandle_Invalid;
 OBSESerializationInterface* g_serialization = NULL;
@@ -214,6 +215,34 @@ static void OverWriteSoundFile(void)
 }
 
 
+/*String already created here*/
+static  const UInt32 GetStringHookRetn  = 0x005F737C;
+static  const UInt32 GetStringHookAddr = 0x005F7377;
+
+static BOOL  __fastcall GetStringOver(Actor* actor , UInt32 edx ,BSStringT*  string, char* str, UInt32 boh){
+	memset(NewSoundFile, 0, MAX_VOICENAME);
+	TESNPC* npc = OBLIVION_CAST(actor->baseForm, TESForm, TESNPC);
+	if(npc){
+		_MESSAGE("voicefile_redirector: Got '%s'  for '%s'",  str, npc->race.race->GetEditorName());
+		const char* edid = getMappingEditor(str);
+		replacePathComponent(Component::Race, str, edid, NewSoundFile); 
+		
+		strcpy(str, NewSoundFile); //Set back as sound use this, not the BSStringT
+		_MESSAGE("voicefile_redirector: Override '%s'",  str);
+	}
+	return ThisStdCall(0x004028D0, string, str, boh);
+} 
+
+static __declspec(naked) void GetStringHook(void)
+{
+	__asm
+	{
+		push ecx
+		mov  ecx, esi
+		call GetStringOver
+		jmp GetStringHookRetn
+	}
+}
 extern "C" {
 
 	bool OBSEPlugin_Query(const OBSEInterface * obse, PluginInfo * info)
@@ -284,21 +313,28 @@ extern "C" {
 		g_pluginHandle = obse->GetPluginHandle();
 
 		// Hook memory address for silent voice
-		WriteRelJump(SilentVoiceHookPatchAddr, (UInt32)&SilentVoiceHook);
+//		WriteRelJump(SilentVoiceHookPatchAddr, (UInt32)&SilentVoiceHook);
 		_MESSAGE("voicefile_redirector: memory address for SilentVoiceHook patched.");
 
 		// Dialog Subtitle Hook
-		WriteRelJump(DialogSubtitleHookPatchAddr, (UInt32)&DialogSubtitleHook);
+//		WriteRelJump(DialogSubtitleHookPatchAddr, (UInt32)&DialogSubtitleHook);
 		_MESSAGE("voicefile_redirector: memory address for DialogSubtitlesHook patched.");
 
 		// General Subtitle Hook
-		WriteRelJump(GeneralSubtitleHookPatchAddr, (UInt32)&GeneralSubtitleHook);
+//		WriteRelJump(GeneralSubtitleHookPatchAddr, (UInt32)&GeneralSubtitleHook);
 		_MESSAGE("voicefile_redirector: memory address for GeneralSubtitlesHook patched.");
 
 		// Lips Hook
-		WriteRelJump(LipsHookPatchAddr, (UInt32)&LipsHook);
+//		WriteRelJump(LipsHookPatchAddr, (UInt32)&LipsHook);
 		_MESSAGE("voicefile_redirector: memory address for LipsHook patched.");
-		InitializeOverrides(nullptr); //TODO real configuration file
+		
+		WriteRelJump(GetStringHookAddr, (UInt32)&GetStringHook);
+		_MESSAGE("voicefile_redirector: memory address for a BSStringT::Set.");
+		
+		ApplyEdidHooks(obse);
+		InitializeOverrides(); //TODO real configuration file
+		
+
 		return true;
 	}
 

@@ -39,16 +39,16 @@ static const UInt32 LipsHookRetnAddr = 0x00494125;
 //static const _CheckFileSub CheckFileSub = (_CheckFileSub) 0x00431020;
 
 #define MAX_VOICENAME 256
-
+/*
 static void OverWriteSoundFile(void);
 static char *pSoundFile;
-
+*/
 static char* ConfigurationFile = "Data\\OBSE\\Plugins\\voice_redirector.ini";
 static char* OverrideFile = "Data\\OBSE\\Plugins\\voice_redirector.over";
 static char* SilentVoiceMp3 = "Data\\OBSE\\Plugins\\elys_usv.mp3";
-static char* SilentVoiceLip = "Data\\OBSE\\Plugins\\Elys_USV";
+//static char* SilentVoiceLip = "Data\\OBSE\\Plugins\\Elys_USV";
 static char NewSoundFile[MAX_VOICENAME];
-std::string g_NewVoiceFilename;
+/*std::string g_NewVoiceFilename;
 //static char *SoundFile = "Data\\sound\\voice\\morrowind_ob.esm\\breton\\m\\fbmwchargen_greeting_00000f48_1.mp3";
 
 static byte DialogSubtitle;
@@ -144,7 +144,7 @@ static int CheckFile(void)
 	}
 }
 */
-
+/*
 static void CheckLipFile(void)
 {
 	removeExtension(pLipFile);
@@ -213,23 +213,33 @@ static void OverWriteSoundFile(void)
 	DialogSubtitle = 1;
 	GeneralSubtitle = 1;
 }
-
+*/
 
 /*String already created here*/
 static  const UInt32 GetStringHookRetn  = 0x005F737C;
 static  const UInt32 GetStringHookAddr = 0x005F7377;
-
+static bool Print = true;
 static BOOL  __fastcall GetStringOver(Actor* actor , UInt32 edx ,BSStringT*  string, char* str, UInt32 boh){
 	memset(NewSoundFile, 0, MAX_VOICENAME);
 	TESNPC* npc = OBLIVION_CAST(actor->baseForm, TESForm, TESNPC);
 	if(npc){
 		_MESSAGE("voicefile_redirector: Got '%s'  for '%s'",  str, npc->race.race->GetEditorName());
-		const char* edid = getMappingEditor(str);
-		replacePathComponent(Component::Race, str, edid, NewSoundFile); 
-		
-		strcpy(str, NewSoundFile); //Set back as sound use this, not the BSStringT
+		const char* edid = npc->race.race->GetEditorName();
+		replacePathComponent(Component::Race, str, edid, NewSoundFile);
+		strcpy(str, NewSoundFile);
+		_MESSAGE("voicefile_redirector: After Edid override '%s'",  str);
+		if (!FileExists(str)){ /* Test for path with editor id */
+			memset(NewSoundFile, 0, MAX_VOICENAME);
+			bool override_found = getOverrideFor(edid, str, NewSoundFile); /*First level override*/
+			if(override_found)
+				strcpy(str, NewSoundFile); //Set back as sound use this, not the BSStringT
+			else
+				strcpy(str, SilentVoiceMp3); //Silent file
+		}
 		_MESSAGE("voicefile_redirector: Override '%s'",  str);
 	}
+	if(Print) printMap();
+	Print = false;
 	return ThisStdCall(0x004028D0, string, str, boh);
 } 
 
@@ -314,25 +324,24 @@ extern "C" {
 
 		// Hook memory address for silent voice
 //		WriteRelJump(SilentVoiceHookPatchAddr, (UInt32)&SilentVoiceHook);
-		_MESSAGE("voicefile_redirector: memory address for SilentVoiceHook patched.");
+//		_MESSAGE("voicefile_redirector: memory address for SilentVoiceHook patched.");
 
 		// Dialog Subtitle Hook
 //		WriteRelJump(DialogSubtitleHookPatchAddr, (UInt32)&DialogSubtitleHook);
-		_MESSAGE("voicefile_redirector: memory address for DialogSubtitlesHook patched.");
+//		_MESSAGE("voicefile_redirector: memory address for DialogSubtitlesHook patched.");
 
 		// General Subtitle Hook
 //		WriteRelJump(GeneralSubtitleHookPatchAddr, (UInt32)&GeneralSubtitleHook);
-		_MESSAGE("voicefile_redirector: memory address for GeneralSubtitlesHook patched.");
+//		_MESSAGE("voicefile_redirector: memory address for GeneralSubtitlesHook patched.");
 
 		// Lips Hook
 //		WriteRelJump(LipsHookPatchAddr, (UInt32)&LipsHook);
-		_MESSAGE("voicefile_redirector: memory address for LipsHook patched.");
+//		_MESSAGE("voicefile_redirector: memory address for LipsHook patched.");
 		
 		WriteRelJump(GetStringHookAddr, (UInt32)&GetStringHook);
 		_MESSAGE("voicefile_redirector: memory address for a BSStringT::Set.");
 		
 		ApplyEdidHooks(obse);
-		InitializeOverrides(); //TODO real configuration file
 		
 
 		return true;

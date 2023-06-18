@@ -3,6 +3,7 @@
 #include <PluginAPI.h>
 #include "edid_hook.h"
 #include "constants.h"
+#include "override.h"
 
 OBSEMessagingInterface* g_msgIntfc;
 
@@ -30,8 +31,6 @@ std::map<UInt32, const char*>	FormIDReferenceMap;
 void __stdcall SetEditorID(TESForm* form, const char* EditorID){
 	char* edid = (char*) FormHeap_Allocate(strlen(EditorID) + 1);
 	strcpy(edid, EditorID);
-//	UInt32* boh = NULL;
-//	*boh=form->refID;
 	const char* old_edid =  FormIDReferenceMap[form->refID]; 
 	FormIDReferenceMap[form->refID] = edid;
 	if(old_edid) FormHeap_Free((void*)old_edid);
@@ -71,7 +70,7 @@ void __cdecl TESFullNameHook(TESFullName* name, UInt32* unk01){
 		mov currentForm, ebx
 	}
 	TESFullName_Load(name, unk01);
-	_MESSAGE("%s %s", name->name.m_data, currentForm->GetEditorName());
+	putRaceOverride(currentForm->GetEditorName(), name->name.m_data);
 }
 
 void ApplyEdidHooks(const OBSEInterface* obse){

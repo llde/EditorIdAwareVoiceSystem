@@ -45,7 +45,7 @@ static char *pSoundFile;
 */
 static char* ConfigurationFile = "Data\\OBSE\\Plugins\\voice_redirector.ini";
 static char* OverrideFile = "Data\\OBSE\\Plugins\\voice_redirector.over";
-static char* SilentVoiceMp3 = "Data\\OBSE\\Plugins\\elys_usv.mp3";
+static char* SilentVoiceMp3 = "Data\\OBSE\\Plugins\\Elys_USV.mp3";
 //static char* SilentVoiceLip = "Data\\OBSE\\Plugins\\Elys_USV";
 static char NewSoundFile[MAX_VOICENAME];
 /*std::string g_NewVoiceFilename;
@@ -223,8 +223,15 @@ static BOOL  __fastcall GetStringOver(Actor* actor , UInt32 edx ,BSStringT*  str
 	memset(NewSoundFile, 0, MAX_VOICENAME);
 	TESNPC* npc = OBLIVION_CAST(actor->baseForm, TESForm, TESNPC);
 	if(npc){
+		const char* edid;
 		_MESSAGE("voicefile_redirector: Got '%s'  for '%s'",  str, npc->race.race->GetEditorName());
-		const char* edid = npc->race.race->GetEditorName();
+		TESRace* override_race = npc->race.race->voiceRaces[npc->actorBaseData.IsFemale() == false ? 0 : 1];
+		if(override_race){
+			edid = override_race->GetEditorName();
+		}
+		else{
+			edid = npc->race.race->GetEditorName();
+		}
 		replacePathComponent(Component::Race, str, edid, NewSoundFile);
 		strcpy(str, NewSoundFile);
 		_MESSAGE("voicefile_redirector: After Edid override '%s'",  str);

@@ -13,6 +13,10 @@ struct REIDInteropData
 const UInt32 kTESRaceFullNameLoad1 = 0x0052D8E4;
 const UInt32 kTESRaceFullNameLoad2 = 0x0052D8F5;
 
+const UInt32 kTESRaceVoiceOverrideJump = 0x0052DA02;
+const UInt32 kTESRaceVoiceOverrideNullJump = 0x0052D9D6;
+const UInt32 kTESRaceVoiceOverrideDest = 0x0052DD4C;
+
 
 const UInt32 kTESFullNameLoad = 0x0046C7A0;
 

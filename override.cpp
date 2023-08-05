@@ -3,6 +3,7 @@
 #include "override.h"
 #include "path.h"
 
+
 #include <unordered_map>
 #include <string>
 #include <vector>
@@ -11,6 +12,13 @@
 static std::unordered_map<std::string, std::vector<std::string>>  otheroverrides;
 
 static std::unordered_map<std::string, std::vector<std::string>>  raceOverrides;
+
+
+/*
+For every race there is a pair (one for sex) of TESRace linking the override for the voices
+nullptr means it use the key race (so it doesn't enable an override)
+*/
+static std::unordered_map<TESRace*, std::pair<std::vector<TESRace*>,std::vector<TESRace*>>> useVoiceOfRaceOverride;
 
 void putRaceOverride(const char* editorID, const char* name){
 	std::string namestr = name;
@@ -31,6 +39,22 @@ void putRaceOverride(const char* editorID, const char* name){
 	}
 }
 
+void putRaceVoiceOVerride(TESRace* race, TESRace* overrideMale, TESRace* overrideFemale) {
+	auto& iter = useVoiceOfRaceOverride.find(race);
+	if (iter == useVoiceOfRaceOverride.end()) {
+		auto maleOverride = std::vector<TESRace*>();
+		auto femaleOverride = std::vector<TESRace*>();
+		if (overrideMale) maleOverride.push_back(overrideMale);
+		if (overrideFemale) femaleOverride.push_back(overrideFemale);
+
+		auto pair = std::make_pair(maleOverride, femaleOverride);
+		useVoiceOfRaceOverride[race] = pair;
+	}
+	else {
+		auto& pair = iter->second;
+		
+	}
+}
 void InitializeConfigurationOverrides(const char* overrideFile){
 	
 }

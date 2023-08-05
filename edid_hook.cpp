@@ -73,6 +73,37 @@ void __cdecl TESFullNameHook(TESFullName* name, UInt32* unk01){
 	putRaceOverride(currentForm->GetEditorName(), name->name.m_data);
 }
 
+void __stdcall TESRace_OverrideVoice(TESRace* thisRace, TESRace* maleVoice, TESRace* femaleVoice){
+	_MESSAGE("%s  %08X   %08X", thisRace->GetEditorName(), maleVoice, femaleVoice );
+}
+
+void __declspec(naked) TESRace_OverrideVoiceHook()
+{
+	__asm
+	{
+		pushad
+		push 	edx
+		push	ecx
+		push 	ebx
+		call TESRace_OverrideVoice
+		popad
+		jmp [kTESRaceVoiceOverrideDest]
+	}
+}
+void __declspec(naked) TESRace_OverrideVoiceNullHook()
+{
+	__asm
+	{
+		pushad
+		push 	eax
+		push	eax
+		push 	ebx
+		call TESRace_OverrideVoice
+		popad
+		jmp [kTESRaceVoiceOverrideDest]
+	}
+}
+
 void ApplyEdidHooks(const OBSEInterface* obse){
 	if(obse->GetPluginLoaded("REID")){
 		_MESSAGE("Detected REID. Apply Messaging interop");
@@ -94,6 +125,8 @@ void ApplyEdidHooks(const OBSEInterface* obse){
 		SafeWrite32(PatchAddress,    (UInt32)TESForm_SetEditorID);
 	}
 	WriteRelCall(kTESRaceFullNameLoad1, (UInt32)&TESFullNameHook);
+	WriteRelJump(kTESRaceVoiceOverrideJump, (UInt32)&TESRace_OverrideVoiceHook);
+	WriteRelJump(kTESRaceVoiceOverrideNullJump, (UInt32)&TESRace_OverrideVoiceNullHook);
 }
 
 

@@ -1,4 +1,7 @@
 #pragma once
+#include <GameForms.h>
+
+void putRaceVoiceOVerride(TESRace* race, TESRace* overrideMale, TESRace* overrideFemale);
 
 void InitializeConfigurationOverrides(const char* overrideFile);
 

@@ -12,7 +12,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6CC3C86E-464E-4FD9-96F5-84D8B1A2D123}</ProjectGuid>
-    <RootNamespace>voicefile_redirector</RootNamespace>
+    <RootNamespace>EditorIdAwareVoiceSystem</RootNamespace>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -20,7 +20,7 @@
     <SccProvider>
     </SccProvider>
     <Keyword>Win32Proj</Keyword>
-    <ProjectName>voicefile_redirector</ProjectName>
+    <ProjectName>EditorIdAwareVoiceSystem</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -81,7 +81,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>voicefile_redirector_exports.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>EditorIdAwareVoiceSystem.def</ModuleDefinitionFile>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
@@ -105,9 +105,15 @@
       <ConformanceMode>false</ConformanceMode>
       <EnforceTypeConversionRules>false</EnforceTypeConversionRules>
       <CompileAsWinRT>false</CompileAsWinRT>
+      <SDLCheck>false</SDLCheck>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>voicefile_redirector_exports.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>EditorIdAwareVoiceSystem_exports.def</ModuleDefinitionFile>
       <GenerateDebugInformation>No</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -148,7 +154,7 @@
     <ClCompile Include="path.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="edid_hook.cpp" />
-    <ClCompile Include="voicefile_redirector.cpp" />
+    <ClCompile Include="EditorIdAwareVoiceSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\obse\obse\GameActorValues.h" />
@@ -180,7 +186,7 @@
     <None Include="..\obse\obse\GameRTTI_1_1.inl" />
     <None Include="..\obse\obse\GameRTTI_1_2.inl" />
     <None Include="..\obse\obse\GameRTTI_1_2_416.inl" />
-    <None Include="voicefile_redirector_exports.def" />
+    <None Include="EditorIdAwareVoiceSystem_exports.def" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\common\common.vcxproj">

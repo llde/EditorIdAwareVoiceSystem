@@ -22,7 +22,7 @@ OBSETasksInterface*			g_Task;
 
 IDebugLog		gLog("EditorIDAwareVoiceSounds.log");
 #define MAX_VOICENAME 256
-const char* name = "EditorID Aware Vocie Sounds";
+const char* name = "EditorID Aware Voice Sounds";
 static const char* ConfigurationFile = "Data\\OBSE\\Plugins\\voice_redirector.ini";
 static const char* OverrideFile = "Data\\OBSE\\Plugins\\voice_redirector.over";
 //static const char* SilentVoiceMp3 = "Data\\OBSE\\Plugins\\Elys_USV.mp3";
@@ -31,12 +31,12 @@ static const char * SilentVoiceMp3 = "Data\\sound\\voice\\Oblivion.esm\\imperial
 
 static char NewSoundFile[MAX_VOICENAME];
 static void __stdcall  HookedCreateSoundString(Actor* actor, BSStringT* path) {
-	_MESSAGE("Call %s   %s", actor->GetEditorName(), path->m_data);
+	MESSAGE_DEBUG("Call %s   %s", actor->GetEditorName(), path->m_data);
 	TESNPC* npc = actor->baseForm->typeID == FormType::kFormType_NPC ? (TESNPC*)actor->baseForm : nullptr;
 	char* str = path->m_data;
 	if (npc) {
 		const char* edid;
-		_MESSAGE("%s: Got '%s'  for '%s'",name, str, npc->race.race->GetEditorName());
+		MESSAGE_DEBUG("%s: Got '%s'  for '%s'",name, str, npc->race.race->GetEditorName());
 		auto&& overr = getRaceVoiceOverride(npc->race.race, npc->actorBaseData.IsFemale());
 		//	if (overr.empty()) overr.push_back(npc->race); //NO override specified for race
 #ifdef DEBUG
@@ -51,19 +51,19 @@ static void __stdcall  HookedCreateSoundString(Actor* actor, BSStringT* path) {
 			}
 			replacePathComponent(Component::Race, str, edid, NewSoundFile);
 			path->Set(NewSoundFile);
-			_MESSAGE("voicefile_redirector: After Edid override '%s'", str);
+			MESSAGE_DEBUG("voicefile_redirector: After Edid override '%s'", str);
 			if (!FileExists(str)) { /* Test for path with editor id */
 				memset(NewSoundFile, 0, MAX_VOICENAME);
 				bool override_found = getOverrideFor(edid, str, NewSoundFile); /*First level override*/
 				if (override_found) {
 					path->Set(NewSoundFile);
-					_MESSAGE("Override '%s'", str);
+					MESSAGE_DEBUG("Override '%s'", str);
 					return;
 				}
-				_MESSAGE("No Voice found for %s", edid);
+				MESSAGE_DEBUG("No Voice found for %s", edid);
 			}
 			else {
-				_MESSAGE("Override '%s'", str);
+				MESSAGE_DEBUG("Override '%s'", str);
 				return;
 			}
 		}
@@ -103,7 +103,7 @@ static void EventMessageCallback(OBSEMessagingInterface::Message* msg) {
 	switch (msg->type) {
 
 	case OBSEMessagingInterface::kMessage_GameInitialized:
-		_MESSAGE("Fixups Race Voice Overrides");
+		MESSAGE_DEBUG("Fixups Race Voice Overrides");
 		*kBackgroundLoadLip = 0;  //Disable LipAsyncTask, force the setting, as jumping cause the subtitle to not appear. 
 		//The original task seems to have an issue where redirected hello (except changing only the race field apparently) doesn't play
 		ApplyTransform([](TESRace* refID) { return (TESRace*) LookupFormByID((UInt32)refID); });
@@ -118,7 +118,7 @@ static void EventMessageCallback(OBSEMessagingInterface::Message* msg) {
 static void TaskFunction() {
 	static bool DoOnce = 0;
 	if (DoOnce == 0) {
-		_MESSAGE("Fixups Race Voice Overrides");
+		MESSAGE_DEBUG("Fixups Race Voice Overrides");
 		ApplyTransform([](TESRace* refID) { return (TESRace*)LookupFormByID((UInt32)refID); });
 		*kBackgroundLoadLip = 0;
 		printMap();
@@ -174,7 +174,7 @@ extern "C" {
 
 	bool OBSEPlugin_Load(const OBSEInterface * obse)
 	{
-		_MESSAGE("EditorID Aware Voice Sound: OBSE calling plugin's Load function.");
+		_MESSAGE("%s: OBSE calling plugin's Load function.", name);
 
 		WriteRelJump(kHookCreateSoundString, (UInt32)&HookCreateSoundString);
 		WriteRelJump(kHookSaveActor, (UInt32) &HookSaveActorContext);

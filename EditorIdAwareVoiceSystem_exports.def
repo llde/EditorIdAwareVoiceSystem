@@ -1,4 +1,4 @@
-LIBRARY	"test_usv"
+LIBRARY	"EditorIdAwareVoiceSystem"
 EXPORTS
 OBSEPlugin_Query
 OBSEPlugin_Load

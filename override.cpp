@@ -56,7 +56,7 @@ void putRaceVoiceOVerride(TESRace* race, TESRace* overrideMale, TESRace* overrid
 		if (std::find(maleOverride.cbegin(), maleOverride.cend(), overrideMale) == maleOverride.cend()) {
 			maleOverride.push_back(overrideMale);
 		}
-		if (std::find(femaleOverride.cbegin(), femaleOverride.cend(), overrideMale) == femaleOverride.cend()) {
+		if (std::find(femaleOverride.cbegin(), femaleOverride.cend(), overrideFemale) == femaleOverride.cend()) {
 			femaleOverride.push_back(overrideFemale);
 		}
 	}
@@ -81,24 +81,27 @@ void printMap(){
 		}
 		print += "\n";
 	}
-	_MESSAGE("Race name overrides:\n %s\n", print);
+	_MESSAGE("Race name overrides:\n%s", print);
 	print.clear();
 	for (auto iter = useVoiceOfRaceOverride.begin(); iter != useVoiceOfRaceOverride.end(); iter++) {
 		print += iter->first->GetEditorName();
 		print += ":";
+		std::string print_inner = "";
 		for (auto&& iter1 = iter->second.first.begin(); iter1 != iter->second.first.end(); iter1++) {
-			print += (*iter1) ? (*iter1)->GetEditorName() : "<THIS>";
-			print += ", ";
+			print_inner += ", ";
+			print_inner += (*iter1) ? (*iter1)->GetEditorName() : "<THIS>";
 		}
-		print += "<>";
+		print += &print_inner[2];
+		print += " ||| ";
+		print_inner.clear();
 		for (auto&& iter1 = iter->second.second.begin(); iter1 != iter->second.second.end(); iter1++) {
-			print += (*iter1) ? (*iter1)->GetEditorName() : "<THIS>";
-			print += ", ";
+			print_inner += ", ";
+			print_inner += (*iter1) ? (*iter1)->GetEditorName() : "<THIS>";
 		}
+		print += &print_inner[2];
 		print += "\n";
-
 	}
-	_MESSAGE("Race overrides:\n %s\n", print);
+	_MESSAGE("Race overrides:\n%s\n", print);
 }
 
 //Will need to test for overhead.

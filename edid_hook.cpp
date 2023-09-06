@@ -64,17 +64,22 @@ void __stdcall TESForm_GetEditorID()
 
 void (__cdecl* TESFullName_Load)(TESFullName*, UInt32*) = (void (__cdecl*)(TESFullName*, UInt32*))kTESFullNameLoad;
 
+static TESRace* currentRace;
 void __cdecl TESFullNameHook(TESFullName* name, UInt32* unk01){
-	TESForm* currentForm;
+	TESRace* currentForm;
 	__asm {
 		mov currentForm, ebx
 	}
 	TESFullName_Load(name, unk01);
 	putRaceOverride(currentForm->GetEditorName(), name->name.m_data);
-}
+	currentRace = currentForm;
+//	_MESSAGE("FullName for  %s", currentForm->GetEditorName());
 
+}
 void __stdcall TESRace_OverrideVoice(TESRace* thisRace, TESRace* maleVoice, TESRace* femaleVoice){
-	_MESSAGE("%s  %08X   %08X", thisRace->GetEditorName(), maleVoice, femaleVoice );
+	putRaceVoiceOVerride(thisRace, maleVoice, femaleVoice);
+	currentRace = nullptr;
+//	_MESSAGE("%s  %08X   %08X", thisRace->GetEditorName(), maleVoice, femaleVoice );
 }
 
 void __declspec(naked) TESRace_OverrideVoiceHook()
@@ -103,6 +108,44 @@ void __declspec(naked) TESRace_OverrideVoiceNullHook()
 		jmp [kTESRaceVoiceOverrideDest]
 	}
 }
+void __stdcall Log(TESRace* nooverride, UInt32 eax) { _MESSAGE("Scream  %s  %u", nooverride->GetEditorName(),eax); }
+UInt32 kLoc = 0x0052D9E4;
+void __declspec(naked) TESRace_NullOverride() {
+	__asm {
+	cmp eax, 8
+	jz skip
+	pushad
+	push eax
+	push ebx
+	call Log
+	popad 
+	jmp [kTESRaceVoiceOverrideDest]
+
+	skip:
+	jmp [kLoc]
+	}
+}
+
+void __stdcall TESRace_Finalize(UInt32 eax) {
+	//Not sure why this is called more then once
+	if (currentRace && eax == 1) {
+//		_MESSAGE("It's the end of the line %u", eax);
+		putRaceVoiceOVerride(currentRace, nullptr, nullptr);
+		currentRace = nullptr;
+	}
+}
+
+static UInt32 kCall = 0x009811E2;
+static UInt32 kRetn = 0x0052DD7A;
+void __declspec(naked) TESRace_EndHook() {
+	__asm {
+		pushad
+		push eax
+		call TESRace_Finalize
+		popad
+		jmp [kRetn]
+	}
+}
 
 void ApplyEdidHooks(const OBSEInterface* obse){
 	if(obse->GetPluginLoaded("REID")){
@@ -126,7 +169,9 @@ void ApplyEdidHooks(const OBSEInterface* obse){
 	}
 	WriteRelCall(kTESRaceFullNameLoad1, (UInt32)&TESFullNameHook);
 	WriteRelJump(kTESRaceVoiceOverrideJump, (UInt32)&TESRace_OverrideVoiceHook);
-	WriteRelJump(kTESRaceVoiceOverrideNullJump, (UInt32)&TESRace_OverrideVoiceNullHook);
+	WriteRelJump(kTESRaceVoiceOverrideNullJump, (UInt32)&TESRace_OverrideVoiceNullHook); //These hooks are apparently unused
+	WriteRelJump(0x0052D9DE, (UInt32)&TESRace_NullOverride); //These hooks are apparently unused
+	WriteRelJump(0x0052DD75, (UInt32)&TESRace_EndHook);
 }
 
 

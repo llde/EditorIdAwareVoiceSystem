@@ -68,20 +68,25 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;$(SolutionDir)\..\obse\obse;$(SolutionDir)\..\obse\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;OBLIVION_VERSION=0x010201A0;OBLIVION;_CRT_NO_VA_START_VALIDATION;_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;OBLIVION_VERSION=0x010201A0;OBLIVION;_CRT_NO_VA_START_VALIDATION;_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS;_ALLOW_RTCc_IN_STL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ForcedIncludeFiles>stdafx.h;obse_common/obse_prefix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PrecompiledHeaderFile>../obse/stdafx.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
+      <SmallerTypeCheck>true</SmallerTypeCheck>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>EditorIdAwareVoiceSystem.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>EditorIdAwareVoiceSystem_exports.def</ModuleDefinitionFile>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>

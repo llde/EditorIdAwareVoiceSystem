@@ -113,7 +113,7 @@ bool getOverrideFor(const char* RaceToOverride, const char* input, char* output)
 	auto vec_ref = raceOverrides.find(race_low);
 	if (vec_ref == raceOverrides.end()) return false;
 	auto& val = vec_ref->second;
-	for (std::string& over : val){
+	for (std::string& over : reverse_wrapper(val)){
 		replacePathComponent(Component::Race, input, over.c_str(), output);
 		if (FileExists(output)) return true;
 	}

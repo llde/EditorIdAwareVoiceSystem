@@ -25,45 +25,44 @@ IDebugLog		gLog("EditorIDAwareVoiceSounds.log");
 const char* name = "EditorID Aware Voice Sounds";
 static const char* ConfigurationFile = "Data\\OBSE\\Plugins\\voice_redirector.ini";
 static const char* OverrideFile = "Data\\OBSE\\Plugins\\voice_redirector.over";
-//static const char* SilentVoiceMp3 = "Data\\OBSE\\Plugins\\Elys_USV.mp3";
-//static char* SilentVoiceLip = "Data\\OBSE\\Plugins\\Elys_USV";
-static const char * SilentVoiceMp3 = "Data\\sound\\voice\\Oblivion.esm\\imperial\\m\\Generic_HELLO_0003AA99_1.mp3";
+static const char* SilentVoiceMp3 = "Data\\OBSE\\Plugins\\LetPeopleRead.mp3";
 
 static char NewSoundFile[MAX_VOICENAME];
 static void __stdcall  HookedCreateSoundString(Actor* actor, BSStringT* path) {
-	MESSAGE_DEBUG("Call %s   %s", actor->GetEditorName(), path->m_data);
 	TESNPC* npc = actor->baseForm->typeID == FormType::kFormType_NPC ? (TESNPC*)actor->baseForm : nullptr;
 	char* str = path->m_data;
 	if (npc) {
 		const char* edid;
-		MESSAGE_DEBUG("%s: Got '%s'  for '%s'",name, str, npc->race.race->GetEditorName());
+		MESSAGE_DEBUG("%s: Got '%s'  for '%s'", actor->GetEditorName(), str, npc->race.race->GetEditorName());
 		auto&& overr = getRaceVoiceOverride(npc->race.race, npc->actorBaseData.IsFemale());
 		//	if (overr.empty()) overr.push_back(npc->race); //NO override specified for race
 #ifdef DEBUG
 		if (!overr.empty()) std::for_each(overr.begin(), overr.end(), [](TESRace* n) { _MESSAGE("Got race override %s", n ? n->GetEditorName() : "<THIS>"); });
 #endif
-		for (auto& override_race : overr) {
+		for (auto& override_race : reverse_wrapper(overr)) {
 			if (override_race) {
 				edid = override_race->GetEditorName();
 			}
 			else {
 				edid = npc->race.race->GetEditorName();
 			}
+			memset(NewSoundFile, 0, MAX_VOICENAME);
 			replacePathComponent(Component::Race, str, edid, NewSoundFile);
 			path->Set(NewSoundFile);
-			MESSAGE_DEBUG("voicefile_redirector: After Edid override '%s'", str);
-			if (!FileExists(str)) { /* Test for path with editor id */
+			str = path->m_data; //SAFETY: Set could reallocate
+			MESSAGE_DEBUG("After Edid override '%s'", NewSoundFile);
+			if (!FileExists(NewSoundFile)) { /* Test for path with editor id */
 				memset(NewSoundFile, 0, MAX_VOICENAME);
 				bool override_found = getOverrideFor(edid, str, NewSoundFile); /*First level override*/
 				if (override_found) {
 					path->Set(NewSoundFile);
-					MESSAGE_DEBUG("Override '%s'", str);
+					MESSAGE_DEBUG("Override '%s'", NewSoundFile);
 					return;
 				}
 				MESSAGE_DEBUG("No Voice found for %s", edid);
 			}
 			else {
-				MESSAGE_DEBUG("Override '%s'", str);
+				MESSAGE_DEBUG("Override '%s'", NewSoundFile);
 				return;
 			}
 		}

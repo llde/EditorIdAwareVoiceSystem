@@ -19,12 +19,13 @@
 PluginHandle				g_pluginHandle = kPluginHandle_Invalid;
 OBSEMessagingInterface*		g_msg;
 OBSETasksInterface*			g_Task;
-
-IDebugLog		gLog("EditorIDAwareVoiceSounds.log");
+const OBSEInterface*		g_obse;
+IDebugLog		gLog("VoiceManagementOverhaul.log");
 #define MAX_VOICENAME 256
-const char* name = "EditorID Aware Voice Sounds";
-static const char* ConfigurationFile = "Data\\OBSE\\Plugins\\voice_redirector.ini";
-static const char* OverrideFile = "Data\\OBSE\\Plugins\\voice_redirector.over";
+std::string name = "Voice Management Overhaul";
+std::string completeName = "Let's People Speak" +  name;
+//static const char* ConfigurationFile = "Data\\OBSE\\Plugins\\voice_redirector.ini";
+//static const char* OverrideFile = "Data\\OBSE\\Plugins\\voice_redirector.over";
 static const char* SilentVoiceMp3 = "Data\\OBSE\\Plugins\\LetPeopleRead.mp3";
 
 static char NewSoundFile[MAX_VOICENAME];
@@ -108,6 +109,9 @@ static void EventMessageCallback(OBSEMessagingInterface::Message* msg) {
 		ApplyTransform([](TESRace* refID) { return (TESRace*) LookupFormByID((UInt32)refID); });
 		printMap();
 		break;
+	case OBSEMessagingInterface::kMessage_PostPostLoad:
+		ApplyEdidHooks(g_obse);
+		break;
 	default:
 		return;
 	}
@@ -129,11 +133,11 @@ extern "C" {
 
 	bool OBSEPlugin_Query(const OBSEInterface * obse, PluginInfo * info)
 	{
-		_MESSAGE("%s: OBSE calling plugin's Query function. <%s v1.0 beta>", name, name);
+		_MESSAGE("%s: OBSE calling plugin's Query function. <v1.0 beta>", completeName.c_str());
 
 		// fill out the info structure
 		info->infoVersion = PluginInfo::kInfoVersion;
-		info->name = name;
+		info->name = name.c_str();
 		info->version = 1;
 		g_pluginHandle = obse->GetPluginHandle();
 
@@ -155,11 +159,9 @@ extern "C" {
 				}
 				g_Task->EnqueueTask(TaskFunction);
 			}
-			else {
-				g_msg = (OBSEMessagingInterface*)obse->QueryInterface(kInterface_Messaging);
-				if (!g_msg) _MESSAGE("[ERROR] Cannot Initialize OBSE Messaging Interface");
-				g_msg->RegisterListener(g_pluginHandle, "OBSE", &EventMessageCallback);
-			}
+			g_msg = (OBSEMessagingInterface*)obse->QueryInterface(kInterface_Messaging);
+			if (!g_msg) _MESSAGE("[ERROR] Cannot Initialize OBSE Messaging Interface");
+			g_msg->RegisterListener(g_pluginHandle, "OBSE", &EventMessageCallback);
 		}
 		else
 		{
@@ -173,17 +175,16 @@ extern "C" {
 
 	bool OBSEPlugin_Load(const OBSEInterface * obse)
 	{
-		_MESSAGE("%s: OBSE calling plugin's Load function.", name);
-
+		_MESSAGE("%s: OBSE calling plugin's Load function.", completeName.c_str());
+		g_obse = obse;
 		WriteRelJump(kHookCreateSoundString, (UInt32)&HookCreateSoundString);
 		WriteRelJump(kHookSaveActor, (UInt32) &HookSaveActorContext);
 		_MESSAGE("Hook address for Voice path generation function.");
 	//	WriteRelCall(0x0052E5BF, (UInt32)&Asseghimma); //This create the path using the last override (mod list) //Keep the hook address 
 	//	WriteRelCall(0x0052E612, (UInt32)&Asseghimma); // This with the first masterfile. 
 	//	WriteRelJump(0x005F7489, 0x005F74D4);
-		ApplyEdidHooks(obse);
+	//	ApplyEdidHooks(obse);
 		
-
 		return true;
 	}
 

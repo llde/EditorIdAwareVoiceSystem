@@ -50,7 +50,7 @@
     <ClCompile Include="..\obse\obse_common\SafeWrite.cpp">
       <Filter>obse</Filter>
     </ClCompile>
-    <ClCompile Include="EditorIdAwareVoiceSystem.cpp" />
+    <ClCompile Include="VoiceManagementOverhaul.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="path.cpp" />
     <ClCompile Include="override.cpp" />
@@ -129,7 +129,7 @@
     <None Include="..\obse\obse\GameRTTI_1_2_416.inl">
       <Filter>obse</Filter>
     </None>
-    <None Include="EditorIdAwareVoiceSystem_exports.def" />
+    <None Include="VoiceManagementOverhaul_exports.def" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="obse">

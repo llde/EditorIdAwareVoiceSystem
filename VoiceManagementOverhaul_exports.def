@@ -1,4 +1,4 @@
-LIBRARY	"EditorIdAwareVoiceSystem"
+LIBRARY	"VoiceManagementOverhaul"
 EXPORTS
 OBSEPlugin_Query
 OBSEPlugin_Load

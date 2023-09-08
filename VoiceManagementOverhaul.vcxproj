@@ -20,7 +20,7 @@
     <SccProvider>
     </SccProvider>
     <Keyword>Win32Proj</Keyword>
-    <ProjectName>EditorIdAwareVoiceSystem</ProjectName>
+    <ProjectName>VoiceManagementOverhaul</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -86,7 +86,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>EditorIdAwareVoiceSystem_exports.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>VoiceManagementOverhaul_exports.def</ModuleDefinitionFile>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
@@ -99,7 +99,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;$(SolutionDir)\..\obse\obse;$(SolutionDir)\..\obse\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;OBLIVION_VERSION=0x010201A0;OBLIVION;_CRT_NO_VA_START_VALIDATION;_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;OBLIVION_VERSION=0x010201A0;OBLIVION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
@@ -118,7 +118,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>EditorIdAwareVoiceSystem_exports.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>VoiceManagementOverhaul_exports.def</ModuleDefinitionFile>
       <GenerateDebugInformation>No</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -159,7 +159,7 @@
     <ClCompile Include="path.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="edid_hook.cpp" />
-    <ClCompile Include="EditorIdAwareVoiceSystem.cpp" />
+    <ClCompile Include="VoiceManagementOverhaul.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\obse\obse\GameActorValues.h" />
@@ -191,7 +191,7 @@
     <None Include="..\obse\obse\GameRTTI_1_1.inl" />
     <None Include="..\obse\obse\GameRTTI_1_2.inl" />
     <None Include="..\obse\obse\GameRTTI_1_2_416.inl" />
-    <None Include="EditorIdAwareVoiceSystem_exports.def" />
+    <None Include="VoiceManagementOverhaul_exports.def" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\common\common.vcxproj">

@@ -23,7 +23,7 @@ const OBSEInterface*		g_obse;
 IDebugLog		gLog("VoiceManagementOverhaul.log");
 #define MAX_VOICENAME 256
 std::string name = "Voice Management Overhaul";
-std::string completeName = "Let's People Speak" +  name;
+std::string completeName = "Let's People Speak: " +  name;
 //static const char* ConfigurationFile = "Data\\OBSE\\Plugins\\voice_redirector.ini";
 //static const char* OverrideFile = "Data\\OBSE\\Plugins\\voice_redirector.over";
 static const char* SilentVoiceMp3 = "Data\\OBSE\\Plugins\\LetPeopleRead.mp3";
@@ -133,7 +133,7 @@ extern "C" {
 
 	bool OBSEPlugin_Query(const OBSEInterface * obse, PluginInfo * info)
 	{
-		_MESSAGE("%s: OBSE calling plugin's Query function. <v1.0 beta>", completeName.c_str());
+		_MESSAGE("%s: OBSE calling plugin's Query function. <v1.0>", completeName.c_str());
 
 		// fill out the info structure
 		info->infoVersion = PluginInfo::kInfoVersion;

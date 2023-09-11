@@ -33,34 +33,56 @@ static void __stdcall  HookedCreateSoundString(Actor* actor, BSStringT* path) {
 	TESNPC* npc = actor->baseForm->typeID == FormType::kFormType_NPC ? (TESNPC*)actor->baseForm : nullptr;
 	char* str = path->m_data;
 	if (npc) {
-		const char* edid;
-		MESSAGE_DEBUG("%s: Got '%s'  for '%s'", actor->GetEditorName(), str, npc->race.race->GetEditorName());
-		auto&& overr = getRaceVoiceOverride(npc->race.race, npc->actorBaseData.IsFemale());
+		std::string edid;
+		MESSAGE_DEBUG("%s: Got '%s'  for '%s'", npc->GetEditorName(), str, npc->race.race->GetEditorName());
+		auto overr = getRaceVoiceOverride(npc->race.race, npc->actorBaseData.IsFemale());
 		//	if (overr.empty()) overr.push_back(npc->race); //NO override specified for race
-#ifdef DEBUG
-		if (!overr.empty()) std::for_each(overr.begin(), overr.end(), [](TESRace* n) { _MESSAGE("Got race override %s", n ? n->GetEditorName() : "<THIS>"); });
-#endif
+		TESRace* overRace = npc->race.race->voiceRaces[npc->actorBaseData.IsFemale()];
+		if (overr.back() != overRace) {
+			MESSAGE_DEBUG("Race Voice OVerride changed with scripts, pick this before the rest");
+			overr.push_back((npc->race.race->voiceRaces[npc->actorBaseData.IsFemale()] ? npc->race.race->voiceRaces[npc->actorBaseData.IsFemale()] : npc->race.race));
+		}
 		for (auto& override_race : reverse_wrapper(overr)) {
+		std::string name;
 			if (override_race) {
 				edid = override_race->GetEditorName();
+				name = override_race->fullName.name.m_data;
 			}
 			else {
 				edid = npc->race.race->GetEditorName();
+				name = npc->race.race->fullName.name.m_data;
+
+			}
+			std::string edid_lower;
+			std::string name_lower;
+			std::transform(edid.begin(), edid.end(), std::back_inserter(edid_lower), ::tolower);
+			std::transform(name.begin(), name.end(), std::back_inserter(name_lower), ::tolower);
+
+			//Race name can be changed on runtime. Some mods expect to see the audio in the path using the newly setted name
+			if (IsRaceNameScriptOverride(edid_lower, name_lower)) {
+				MESSAGE_DEBUG("Race name was overrided, try the asked file before");
+				if (FileExists(str)) {
+					MESSAGE_DEBUG("File exist, Bailout");
+					return;
+				}
+				else {
+					MESSAGE_DEBUG("File don't exist. Continue logic");
+				}
 			}
 			memset(NewSoundFile, 0, MAX_VOICENAME);
-			replacePathComponent(Component::Race, str, edid, NewSoundFile);
+			replacePathComponent(Component::Race, str, edid_lower.c_str(), NewSoundFile);
 			path->Set(NewSoundFile);
 			str = path->m_data; //SAFETY: Set could reallocate
 			MESSAGE_DEBUG("After Edid override '%s'", NewSoundFile);
 			if (!FileExists(NewSoundFile)) { /* Test for path with editor id */
 				memset(NewSoundFile, 0, MAX_VOICENAME);
-				bool override_found = getOverrideFor(edid, str, NewSoundFile); /*First level override*/
+				bool override_found = getOverrideFor(edid_lower, str, NewSoundFile); /*First level override*/
 				if (override_found) {
 					path->Set(NewSoundFile);
 					MESSAGE_DEBUG("Override '%s'", NewSoundFile);
 					return;
 				}
-				MESSAGE_DEBUG("No Voice found for %s", edid);
+				MESSAGE_DEBUG("No Voice found for %s", edid_lower.c_str());
 			}
 			else {
 				MESSAGE_DEBUG("Override '%s'", NewSoundFile);
@@ -133,12 +155,12 @@ extern "C" {
 
 	bool OBSEPlugin_Query(const OBSEInterface * obse, PluginInfo * info)
 	{
-		_MESSAGE("%s: OBSE calling plugin's Query function. <v1.0>", completeName.c_str());
+		_MESSAGE("%s: OBSE calling plugin's Query function. <v1.1>", completeName.c_str());
 
 		// fill out the info structure
 		info->infoVersion = PluginInfo::kInfoVersion;
 		info->name = name.c_str();
-		info->version = 1;
+		info->version = 2;
 		g_pluginHandle = obse->GetPluginHandle();
 
 		// version checks

@@ -62,10 +62,10 @@ void putRaceVoiceOVerride(TESRace* race, TESRace* overrideMale, TESRace* overrid
 	}
 }
 
-std::vector<TESRace*>&& getRaceVoiceOverride(TESRace* race, bool isFemale) {
+std::vector<TESRace*> getRaceVoiceOverride(TESRace* race, bool isFemale) {
 	auto raceOver = useVoiceOfRaceOverride.find(race);
 	if (raceOver == useVoiceOfRaceOverride.end()) return std::vector<TESRace*>();
-	return isFemale ? std::forward<std::vector<TESRace*>>(raceOver->second.second) : std::forward<std::vector<TESRace*>>(raceOver->second.first);
+	return isFemale ? raceOver->second.second : raceOver->second.first; 
 }
 
 void InitializeConfigurationOverrides(const char* overrideFile){
@@ -105,17 +105,22 @@ void printMap(){
 }
 
 //Will need to test for overhead.
-bool getOverrideFor(const char* RaceToOverride, const char* input, char* output){
-	if (RaceToOverride == nullptr) return false;
-	std::string race = RaceToOverride;
-	std::string race_low;
-	std::transform(race.begin(), race.end(), std::back_inserter(race_low), ::tolower);
-	auto vec_ref = raceOverrides.find(race_low);
+bool getOverrideFor(std::string& RaceToOverride, const char* input, char* output){
+	auto vec_ref = raceOverrides.find(RaceToOverride);
 	if (vec_ref == raceOverrides.end()) return false;
 	auto& val = vec_ref->second;
 	for (std::string& over : reverse_wrapper(val)){
 		replacePathComponent(Component::Race, input, over.c_str(), output);
 		if (FileExists(output)) return true;
+	}
+	return false;
+}
+
+bool IsRaceNameScriptOverride(std::string& edid, std::string&  name) {
+	auto&& vec_ref = raceOverrides.find(edid);
+	if (vec_ref == raceOverrides.end()) return true; //No override found assumed logic
+	if (vec_ref->second.back() != name) {
+		return true;  //if name different then last loaded override assume script changed
 	}
 	return false;
 }

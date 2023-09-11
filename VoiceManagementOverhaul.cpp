@@ -38,7 +38,7 @@ static void __stdcall  HookedCreateSoundString(Actor* actor, BSStringT* path) {
 		auto overr = getRaceVoiceOverride(npc->race.race, npc->actorBaseData.IsFemale());
 		//	if (overr.empty()) overr.push_back(npc->race); //NO override specified for race
 		TESRace* overRace = npc->race.race->voiceRaces[npc->actorBaseData.IsFemale()];
-		if (overr.back() != overRace) {
+		if (overr.empty() || (!overr.empty() && overr.back() != overRace)) {
 			MESSAGE_DEBUG("Race Voice OVerride changed with scripts, pick this before the rest");
 			overr.push_back((npc->race.race->voiceRaces[npc->actorBaseData.IsFemale()] ? npc->race.race->voiceRaces[npc->actorBaseData.IsFemale()] : npc->race.race));
 		}
@@ -155,12 +155,12 @@ extern "C" {
 
 	bool OBSEPlugin_Query(const OBSEInterface * obse, PluginInfo * info)
 	{
-		_MESSAGE("%s: OBSE calling plugin's Query function. <v1.1>", completeName.c_str());
+		_MESSAGE("%s: OBSE calling plugin's Query function. <v1.1.1>", completeName.c_str());
 
 		// fill out the info structure
 		info->infoVersion = PluginInfo::kInfoVersion;
 		info->name = name.c_str();
-		info->version = 2;
+		info->version = 3;
 		g_pluginHandle = obse->GetPluginHandle();
 
 		// version checks

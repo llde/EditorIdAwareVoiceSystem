@@ -28,13 +28,13 @@ void putRaceOverride(const char* editorID, const char* name){
 	std::transform(namestr.begin(), namestr.end(), std::back_inserter(namestr_lower), ::tolower);
 	std::transform(edid.begin(), edid.end(), std::back_inserter(edid_low), ::tolower);
 	auto iter = raceOverrides.find(edid_low);
-	if(edid_low != namestr_lower && iter != raceOverrides.end()){
+	if(iter != raceOverrides.end()){
 		if (std::find(iter->second.begin(), iter->second.end(), namestr_lower) == iter->second.end())
 			iter->second.push_back(namestr_lower);
 	}
 	else{
 		auto raceOverrideVector = std::vector<std::string>();
-		if(edid_low != namestr_lower) raceOverrideVector.push_back(namestr_lower);
+		raceOverrideVector.push_back(namestr_lower);
 		raceOverrides[edid_low] = raceOverrideVector;
 	}
 }
@@ -81,7 +81,7 @@ void printMap(){
 		}
 		print += "\n";
 	}
-	_MESSAGE("Race name overrides:\n%s", print);
+	_MESSAGE("Race name overrides:\n%s", print.c_str());
 	print.clear();
 	for (auto iter = useVoiceOfRaceOverride.begin(); iter != useVoiceOfRaceOverride.end(); iter++) {
 		print += iter->first->GetEditorName();
@@ -101,10 +101,12 @@ void printMap(){
 		print += &print_inner[2];
 		print += "\n";
 	}
-	_MESSAGE("Race overrides:\n%s\n", print);
+	_MESSAGE("Race overrides:\n%s\n", print.c_str());
 }
 
 //Will need to test for overhead.
+//TODO possible premature optimization: Add a boolean to save if a current name is either equal to the race edid or to a previous name
+//This will allow to save the entire order of race names appearing even if equals keeping the substituion operation cheaply, as the number of files checked will be reduced
 bool getOverrideFor(std::string& RaceToOverride, const char* input, char* output){
 	auto vec_ref = raceOverrides.find(RaceToOverride);
 	if (vec_ref == raceOverrides.end()) return false;
@@ -115,11 +117,13 @@ bool getOverrideFor(std::string& RaceToOverride, const char* input, char* output
 	}
 	return false;
 }
-
+//Not exactly true. A back override (an override with a name appeared previosuly) will not be saved in the vector, so it will appear as an scripted change.
+//NO biggie probably, the proper fix will be probably unfeasible without serious profiling and optimizations
 bool IsRaceNameScriptOverride(std::string& edid, std::string&  name) {
 	auto&& vec_ref = raceOverrides.find(edid);
 	if (vec_ref == raceOverrides.end()) return true; //No override found assumed logic
-	if (vec_ref->second.back() != name) {
+	if (vec_ref->second.empty()) return true; 
+	if (!vec_ref->second.empty() && vec_ref->second.back() != name) {
 		return true;  //if name different then last loaded override assume script changed
 	}
 	return false;

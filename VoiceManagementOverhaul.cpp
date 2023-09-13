@@ -26,7 +26,7 @@ std::string name = "Voice Management Overhaul";
 std::string completeName = "Let's People Speak: " +  name;
 //static const char* ConfigurationFile = "Data\\OBSE\\Plugins\\voice_redirector.ini";
 //static const char* OverrideFile = "Data\\OBSE\\Plugins\\voice_redirector.over";
-static const char* SilentVoiceMp3 = "Data\\OBSE\\Plugins\\LetPeopleRead.mp3";
+static const char* SilentVoiceMp3 = "Data\\Sound\\Voice\\LetPeopleRead.mp3";
 
 static char NewSoundFile[MAX_VOICENAME];
 static void __stdcall  HookedCreateSoundString(Actor* actor, BSStringT* path) {
@@ -34,7 +34,8 @@ static void __stdcall  HookedCreateSoundString(Actor* actor, BSStringT* path) {
 	char* str = path->m_data;
 	if (npc) {
 		std::string edid;
-		MESSAGE_DEBUG("%s: Got '%s'  for '%s'", npc->GetEditorName(), str, npc->race.race->GetEditorName());
+		std::string npcName = std::string(npc->GetEditorName()); //TO FIX an issue with REID integration
+		MESSAGE_DEBUG("%s: Got '%s'  for '%s'", npcName.c_str(), str, npc->race.race->GetEditorName());
 		auto overr = getRaceVoiceOverride(npc->race.race, npc->actorBaseData.IsFemale());
 		//	if (overr.empty()) overr.push_back(npc->race); //NO override specified for race
 		TESRace* overRace = npc->race.race->voiceRaces[npc->actorBaseData.IsFemale()];
@@ -43,7 +44,7 @@ static void __stdcall  HookedCreateSoundString(Actor* actor, BSStringT* path) {
 			overr.push_back((npc->race.race->voiceRaces[npc->actorBaseData.IsFemale()] ? npc->race.race->voiceRaces[npc->actorBaseData.IsFemale()] : npc->race.race));
 		}
 		for (auto& override_race : reverse_wrapper(overr)) {
-		std::string name;
+			std::string name;
 			if (override_race) {
 				edid = override_race->GetEditorName();
 				name = override_race->fullName.name.m_data;
@@ -126,7 +127,7 @@ static void EventMessageCallback(OBSEMessagingInterface::Message* msg) {
 
 	case OBSEMessagingInterface::kMessage_GameInitialized:
 		MESSAGE_DEBUG("Fixups Race Voice Overrides");
-		*kBackgroundLoadLip = 0;  //Disable LipAsyncTask, force the setting, as jumping cause the subtitle to not appear. 
+		*kBackgroundLoadLip = 1;  //Disable LipAsyncTask, force the setting, as jumping cause the subtitle to not appear. 
 		//The original task seems to have an issue where redirected hello (except changing only the race field apparently) doesn't play
 		ApplyTransform([](TESRace* refID) { return (TESRace*) LookupFormByID((UInt32)refID); });
 		printMap();
@@ -155,12 +156,12 @@ extern "C" {
 
 	bool OBSEPlugin_Query(const OBSEInterface * obse, PluginInfo * info)
 	{
-		_MESSAGE("%s: OBSE calling plugin's Query function. <v1.1.1>", completeName.c_str());
+		_MESSAGE("%s: OBSE calling plugin's Query function. <v1.1.2>", completeName.c_str());
 
 		// fill out the info structure
 		info->infoVersion = PluginInfo::kInfoVersion;
 		info->name = name.c_str();
-		info->version = 3;
+		info->version = 4;
 		g_pluginHandle = obse->GetPluginHandle();
 
 		// version checks

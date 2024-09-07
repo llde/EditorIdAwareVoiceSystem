@@ -81,7 +81,8 @@ void printMap(){
 		}
 		print += "\n";
 	}
-	_MESSAGE("Race name overrides:\n%s", print.c_str());
+	_MESSAGE_D("Race name overrides:\n");
+	_MESSAGE_D(print.c_str());
 	print.clear();
 	for (auto iter = useVoiceOfRaceOverride.begin(); iter != useVoiceOfRaceOverride.end(); iter++) {
 		print += iter->first->GetEditorName();
@@ -101,7 +102,8 @@ void printMap(){
 		print += &print_inner[2];
 		print += "\n";
 	}
-	_MESSAGE("Race overrides:\n%s\n", print.c_str());
+	_MESSAGE_D("Race overrides:\n");
+	_MESSAGE_D(print.c_str());
 }
 
 //Will need to test for overhead.

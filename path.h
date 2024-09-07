@@ -23,6 +23,7 @@ char* getSingleComponent(Component path_component, const char* input);
 */
 bool replacePathComponent(Component path_component, const char* input, const char* repl, char* output);
 
+void stripPathComponent(Component path_component, char* input);
 
 void appendToPath(char* string, const char* app);
 

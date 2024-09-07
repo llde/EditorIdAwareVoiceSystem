@@ -4,6 +4,7 @@
 #include "edid_hook.h"
 #include "constants.h"
 #include "override.h"
+#include <utils.h>
 
 OBSEMessagingInterface* g_msgIntfc;
 
@@ -12,7 +13,9 @@ REIDInteropData* msg = new REIDInteropData();
 const char* __stdcall DispatchREIDMessage(TESForm* form){
 	msg->FormID = form->refID;
 	g_msgIntfc->Dispatch(g_pluginHandle, 'EDID' , msg , sizeof(REIDInteropData) ,"REID");
-	if(msg->HasEditorID) return msg->EditorIDBuffer;
+	if (msg->HasEditorID) {
+		return msg->EditorIDBuffer;
+	}
 	return "";
 }
 

@@ -27,6 +27,30 @@ char* getSingleComponent(Component path_component, const char* input) {
 	return ttt;
 }
 
+void stripPathComponent(Component path_component, char* input) {
+	size_t len = strlen(input);
+	char* new_ptr = nullptr;
+	size_t pos_start_comp = 0, pos_end_comp = 0;
+	size_t component = 0;
+	for (size_t i = 0; i < len; i++) {
+		if (input[i] == '\\') {
+			component++;
+			if (path_component == Component::Sex && component == 5 ) {
+				pos_start_comp = i;
+				new_ptr = input + i;
+			}
+			if (path_component == Component::Sex && component > 5) {
+				pos_end_comp = i;
+				break;
+			};
+		}
+	}
+	if (new_ptr) {
+		size_t newlen = len - (pos_end_comp - pos_start_comp);
+		memmove(new_ptr, input + pos_end_comp, newlen);
+		memset(input + newlen + 1, 0, len - newlen);
+	}
+}
 
 bool replacePathComponent(Component path_component, const char* input, const char* repl, char* output) {
 	size_t component = 0;

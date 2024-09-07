@@ -36,6 +36,19 @@ static void __stdcall  HookedCreateSoundString(Actor* actor, BSStringT* path) {
 		std::string edid;
 		std::string npcName = std::string(npc->GetEditorName()); //TO FIX an issue with REID integration
 		MESSAGE_DEBUG("%s: Got '%s'  for '%s'", npcName.c_str(), str, npc->race.race->GetEditorName());
+		//Override for NPC specific voice
+		memset(NewSoundFile, 0, MAX_VOICENAME);
+		replacePathComponent(Component::Race, str, npcName.c_str(), NewSoundFile);
+		stripPathComponent(Component::Sex, NewSoundFile); //Strip sex component in specific NPC case. Sex is implicit in the NPC proper.
+		if (FileExists(NewSoundFile)) {
+			MESSAGE_DEBUG("Sound file for NPC %s at  %s found", npcName.c_str(), NewSoundFile);
+			path->Set(NewSoundFile);
+			return;
+		}
+		else {
+			MESSAGE_DEBUG("Sound file for NPC %s at  %s not found", npcName.c_str(), NewSoundFile);
+		}
+		//Continue race override logic
 		auto overr = getRaceVoiceOverride(npc->race.race, npc->actorBaseData.IsFemale());
 		//	if (overr.empty()) overr.push_back(npc->race); //NO override specified for race
 		TESRace* overRace = npc->race.race->voiceRaces[npc->actorBaseData.IsFemale()];
@@ -126,8 +139,8 @@ static void EventMessageCallback(OBSEMessagingInterface::Message* msg) {
 	switch (msg->type) {
 
 	case OBSEMessagingInterface::kMessage_GameInitialized:
-		MESSAGE_DEBUG("Fixups Race Voice Overrides");
-		*kBackgroundLoadLip = 1;  //Disable LipAsyncTask, force the setting, as jumping cause the subtitle to not appear. 
+		MESSAGE_DEBUG("Fixups Race Voice Overrides From GI");
+		*kBackgroundLoadLip = 0;  //Disable LipAsyncTask, force the setting, as jumping cause the subtitle to not appear. 
 		//The original task seems to have an issue where redirected hello (except changing only the race field apparently) doesn't play
 		ApplyTransform([](TESRace* refID) { return (TESRace*) LookupFormByID((UInt32)refID); });
 		printMap();
@@ -144,7 +157,7 @@ static void EventMessageCallback(OBSEMessagingInterface::Message* msg) {
 static void TaskFunction() {
 	static bool DoOnce = 0;
 	if (DoOnce == 0) {
-		MESSAGE_DEBUG("Fixups Race Voice Overrides");
+		MESSAGE_DEBUG("Fixups Race Voice Overrides From Task");
 		ApplyTransform([](TESRace* refID) { return (TESRace*)LookupFormByID((UInt32)refID); });
 		*kBackgroundLoadLip = 0;
 		printMap();
@@ -156,7 +169,7 @@ extern "C" {
 
 	bool OBSEPlugin_Query(const OBSEInterface * obse, PluginInfo * info)
 	{
-		_MESSAGE("%s: OBSE calling plugin's Query function. <v1.1.2>", completeName.c_str());
+		_MESSAGE("%s: OBSE calling plugin's Query function. <v1.2.0>", completeName.c_str());
 
 		// fill out the info structure
 		info->infoVersion = PluginInfo::kInfoVersion;
@@ -174,7 +187,7 @@ extern "C" {
 			}
 
 			if (!(OBSETasks2Interface*)obse->QueryInterface(kInterface_Tasks2)) {
-				_MESSAGE("Currrent OBSE version doesnt support GameInitialized messages. Use Task method");
+				_MESSAGE("Currrent OBSE version doesn't support GameInitialized messages. Use Task method");
 				g_Task = (OBSETasksInterface*)obse->QueryInterface(kInterface_Tasks);
 				if (!g_Task) {
 					_MESSAGE("[ERROR] Cannot load Task Interface. OBSE version too old. Use At Least xOBSE 22.0 (xOBSE 22.9 or above preferred)");
